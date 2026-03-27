@@ -2,7 +2,7 @@ import streamlit as st
 
 from rag_engine import build_retriever_from_pdf, generate_answer
 
-st.set_page_config(page_title="DocuMind AI | code2model", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="DocuMind AI | code2model", page_icon="✨", layout="wide")
 
 # Custom CSS for a modern, fancy look
 CUSTOM_CSS = """
@@ -62,6 +62,22 @@ hr {
 </style>
 """
 
+HEADER_HTML = """
+<div style='display: flex; align-items: center; margin-bottom: 5px; margin-top: -15px;'>
+    <svg width="45" height="45" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 15px; filter: drop-shadow(0px 0px 8px rgba(0, 242, 254, 0.6));">
+        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="url(#gradient)"/>
+        <path d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z" fill="url(#gradient)"/>
+        <defs>
+            <linearGradient id="gradient" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#00f2fe"/>
+                <stop offset="1" stop-color="#4facfe"/>
+            </linearGradient>
+        </defs>
+    </svg>
+    <h1 style='margin: 0; background: -webkit-linear-gradient(45deg, #00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>DocuMind AI</h1>
+</div>
+"""
+
 # Inject CSS
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
@@ -97,17 +113,20 @@ def clear_retriever() -> None:
 
 def render_chat_history() -> None:
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
+        avatar = "👤" if message["role"] == "user" else "✨"
+        with st.chat_message(message["role"], avatar=avatar):
             st.markdown(message["content"])
 
 
 def main() -> None:
     initialize_state()
 
-    st.title("🧠 DocuMind AI")
+    st.markdown(HEADER_HTML, unsafe_allow_html=True)
     st.caption("Intelligent Document Explorer • Developed by **code2model**")
 
     with st.sidebar:
+        st.markdown(HEADER_HTML.replace('width="45"', 'width="35"').replace('height="45"', 'height="35"'), unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("### 👨‍💻 About")
         st.info("This application is proudly developed and maintained by **code2model**. It features cutting-edge Retrieval-Augmented Generation for reading and chatting with PDFs.", icon="💡")
         st.divider()
@@ -139,18 +158,28 @@ def main() -> None:
         return
 
     st.session_state.messages.append({"role": "user", "content": user_prompt})
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="👤"):
         st.markdown(user_prompt)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar="✨"):
         with st.spinner("🧠 Analyzing..."):
-            assistant_reply = generate_answer(
+            assistant_reply_generator, sources = generate_answer(
                 user_prompt,
                 st.session_state.messages,
                 use_rag=use_rag,
                 retriever=st.session_state.retriever,
             )
-            st.markdown(assistant_reply)
+            
+            if hasattr(assistant_reply_generator, '__iter__') and not isinstance(assistant_reply_generator, str):
+                assistant_reply = st.write_stream(assistant_reply_generator)
+            else:
+                st.markdown(assistant_reply_generator)
+                assistant_reply = assistant_reply_generator
+            
+            if sources:
+                with st.expander("📚 View Source References"):
+                    for i, doc in enumerate(sources):
+                        st.markdown(f"**Source {i+1}**:\n\n{doc.page_content}\n")
 
     st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
 
