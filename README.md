@@ -19,15 +19,15 @@ This modern Streamlit application implements a seamless, highly-responsive RAG (
 ### ✨ Key Upgrades & Features
 
 -  **Modern UI / UX:** Beautiful glassmorphism sidebar, gradient typography, and customized interactive buttons.
-- ⚡ **Model Upgrade:** Upgraded default chat completions to use OpenAI's latest architecture, robustly falling back to `gpt-4o-mini` for fast and cost-effective generations.
+-  **Model Upgrade:** Upgraded default chat completions to use OpenAI's latest architecture, robustly falling back to `gpt-4o-mini` for fast and cost-effective generations.
 -  **Efficient PDF Extraction:** Native processing directly from binary streams using PyMuPDF (`fitz`).
 -  **Memory Vector Storage:** High-speed, dependency-light embedding storage using LangChain `InMemoryVectorStore`.
 -  **Session Chat History:** Context-aware conversations leveraging `st.chat_message` and `st.chat_input`.
 
 ## 📂 Project Structure
 
-- `app.py` - Main Streamlit UI, aesthetic configurations, and chat flow.
-- `rag.py` - Core RAG pipeline (PDF extraction, chunking, embeddings, and QA generation).
+- `documind_app.py` - Main Streamlit UI, aesthetic configurations, and chat flow.
+- `rag_engine.py` - Core RAG Neural Pipeline (PDF extraction, chunking, embeddings, and QA generation).
 - `requirements.txt` - Required Python dependencies mapped to stable versions.
 
 ## 🛠️ Quick Start
@@ -63,7 +63,7 @@ OPENAI_API_KEY=your_openai_key_here
 ### 4. Lift Off 
 
 ```bash
-streamlit run app.py
+streamlit run documind_app.py
 ```
 
 ## Architecture Flow
