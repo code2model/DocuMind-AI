@@ -80,25 +80,25 @@ def generate_answer(
     chat_history: List[Dict[str, str]],
     use_rag: bool = False,
     retriever=None,
-) -> str:
+) -> tuple[str, List[Document]]:
     if not use_rag:
         return (
             "RAG is currently OFF. You asked: "
             f"\n\n> {query}\n\n"
             "Turn on 'Use RAG pipeline' in the sidebar after you upload a PDF."
-        )
+        ), []
 
     if retriever is None:
-        return "Please upload a PDF and build the retriever first."
+        return "Please upload a PDF and build the retriever first.", []
 
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        return "OPENAI_API_KEY is missing. Add it to your .env file and restart the app."
+        return "OPENAI_API_KEY is missing. Add it to your .env file and restart the app.", []
 
     retrieved_documents = retriever.invoke(query)
     augmented_search_context = _build_augmented_context(retrieved_documents)
     if not augmented_search_context.strip():
-        return "I dont know"
+        return "I dont know", []
 
     history_lines = [
         f"{message.get('role', 'user')}: {message.get('content', '')}"
@@ -124,6 +124,14 @@ def generate_answer(
         model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
         messages=prompt,
         temperature=0,
+        stream=True,
     )
-    prediction = response.choices[0].message.content
-    return prediction.strip() if prediction else "I dont know"
+    
+    def generate_stream():
+        for chunk in response:
+            if chunk.choices and len(chunk.choices) > 0:
+                content = chunk.choices[0].delta.content
+                if content:
+                    yield content
+
+    return generate_stream(), retrieved_documents
